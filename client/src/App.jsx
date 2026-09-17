@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 
-const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-const defaultWsUrl = `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.hostname}:5000/ws/markets`;
+const isLocalVite = window.location.hostname === 'localhost' && window.location.port === '5173';
+const apiUrl = import.meta.env.VITE_API_URL || (isLocalVite ? 'http://localhost:5000/api' : `${window.location.origin}/api`);
+const defaultWsUrl = isLocalVite
+  ? `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.hostname}:5000/ws/markets`
+  : `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws/markets`;
 const wsUrl = import.meta.env.VITE_WS_URL || defaultWsUrl;
 
 function App() {

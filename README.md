@@ -43,3 +43,16 @@ automatic synchronization as the schema matures.
 - `POST /api/markets/sync` — trigger an immediate market refresh.
 - `GET /api/catalog/sports`, `/api/catalog/bookmakers`, `/api/catalog/events` — persisted Sequelize catalog data when MySQL is enabled.
 - WebSocket `/ws/markets` — receives the latest snapshot and refresh broadcasts.
+
+## Railway deployment
+
+This repository is configured as a single Railway service: the build creates
+the React bundle, Express serves `client/dist`, and `npm start` runs the API.
+Railway can use the included `railway.json` configuration directly.
+
+Set `ODDS_API_KEY` for live data. If you attach Railway MySQL, set
+`DB_ENABLED=true`; the server understands Railway's `MYSQLHOST`, `MYSQLPORT`,
+`MYSQLDATABASE`, `MYSQLUSER`, and `MYSQLPASSWORD` variables automatically.
+Set `DB_SYNC=true` only for the first schema creation, then turn it off.
+`DB_REQUIRED=false` keeps the web service available in in-memory mode if the
+database is temporarily unavailable.

@@ -18,6 +18,7 @@ export const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
   clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
   dbEnabled: toBoolean(process.env.DB_ENABLED, false),
+  dbRequired: toBoolean(process.env.DB_REQUIRED, false),
   dbSync: toBoolean(process.env.DB_SYNC, false),
   syncIntervalMs: toPositiveNumber(process.env.SYNC_INTERVAL_MS, 15000),
   oddsApi: {
@@ -27,10 +28,10 @@ export const env = {
     markets: process.env.ODDS_API_MARKETS || 'h2h'
   },
   database: {
-    host: process.env.DB_HOST || '127.0.0.1',
-    port: toPositiveNumber(process.env.DB_PORT, 3306),
-    name: process.env.DB_NAME || 'visualdisplay',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || ''
+    host: process.env.DB_HOST || process.env.MYSQLHOST || '127.0.0.1',
+    port: toPositiveNumber(process.env.DB_PORT || process.env.MYSQLPORT, 3306),
+    name: process.env.DB_NAME || process.env.MYSQLDATABASE || 'visualdisplay',
+    user: process.env.DB_USER || process.env.MYSQLUSER || 'root',
+    password: process.env.DB_PASSWORD || process.env.MYSQLPASSWORD || ''
   }
 };

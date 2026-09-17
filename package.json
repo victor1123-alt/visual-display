@@ -3,8 +3,10 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
-    "install:all": "npm.cmd install --prefix server && npm.cmd install --prefix client",
-    "dev": "concurrently \"npm.cmd run dev --prefix server\" \"npm.cmd run dev --prefix client\""
+    "install:all": "npm ci --prefix server && npm ci --prefix client",
+    "build": "npm ci --prefix server && npm ci --prefix client && npm run build --prefix client",
+    "start": "node server/src/server.js",
+    "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\""
   },
   "devDependencies": { "concurrently": "^9.1.2" }
 }

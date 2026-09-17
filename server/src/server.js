@@ -5,17 +5,25 @@ import { createServer } from 'node:http';
 
 async function startServer() {
   if (env.dbEnabled) {
-    const { connectDatabase, initializeDatabase } = await import('./config/databaseConnection.js');
-    await import('./models/index.js');
-    await connectDatabase();
-    await initializeDatabase();
+    let databaseConnection;
+    try {
+      databaseConnection = await import('./config/databaseConnection.js');
+      await import('./models/index.js');
+      await databaseConnection.connectDatabase();
+      await databaseConnection.initializeDatabase();
+    } catch (error) {
+      if (env.dbRequired) throw error;
+      console.error(`Database unavailable; continuing with in-memory snapshots: ${error.message}`);
+      env.dbEnabled = false;
+      await databaseConnection?.closeDatabase().catch(() => {});
+    }
   }
 
   const httpServer = createServer(app);
   const webSocketServer = createMarketWebSocketServer(httpServer);
   const stopMarketSync = startMarketSync(webSocketServer);
-  httpServer.listen(env.port, () => {
-    console.log(`VisualDisplay API listening on port ${env.port}`);
+  httpServer.listen(env.port, '0.0.0.0', () => {
+    console.log(`VisualDisplay API listening on 0.0.0.0:${env.port}`);
     console.log('Market WebSocket listening at /ws/markets');
     console.log(`Market sync interval: ${env.syncIntervalMs}ms`);
     console.log(`Storage: ${env.dbEnabled ? 'MySQL via Sequelize' : 'in-memory snapshot'}`);
