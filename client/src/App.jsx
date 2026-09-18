@@ -188,8 +188,10 @@ function MetricCard({ label, value, detail }) {
 function OpportunityRow({ opportunity }) {
   const margin = Number(opportunity.arbitrage?.margin || 0).toFixed(2);
   const stakes = opportunity.arbitrage?.stakes || [];
+  const selectionMode = opportunity.bookmakerSelection?.mode === 'preferred' ? 'preferred' : 'fallback';
+  const selectionLabel = selectionMode === 'preferred' ? 'Nigeria-priority books' : 'Global fallback';
 
-  return <article className="opportunity-row p-3 mb-3"><div className="d-flex flex-wrap justify-content-between gap-2"><div><strong>{opportunity.homeTeam} <span className="versus">vs</span> {opportunity.awayTeam}</strong><p className="small text-secondary mb-1">{opportunity.market} · {opportunity.competition}</p><p className="small match-time mb-0">Starts {formatMatchTime(opportunity.startsAt)}</p></div><span className="margin-badge">+{margin}% edge</span></div><div className="row g-2 mt-2">{stakes.map((stake) => <div className="col-md-4" key={`${opportunity.id}-${stake.outcome}`}><div className="stake-card"><span>{stake.outcome}</span><strong>{stake.odds}</strong><small>{stake.bookmaker} · stake {stake.stake}</small></div></div>)}</div></article>;
+  return <article className="opportunity-row p-3 mb-3"><div className="d-flex flex-wrap justify-content-between gap-2"><div><strong>{opportunity.homeTeam} <span className="versus">vs</span> {opportunity.awayTeam}</strong><p className="small text-secondary mb-1">{opportunity.market} · {opportunity.competition} <span className={`bookmaker-mode ${selectionMode}`}>{selectionLabel}</span></p><p className="small match-time mb-0">Starts {formatMatchTime(opportunity.startsAt)}</p></div><span className="margin-badge">+{margin}% edge</span></div><div className="row g-2 mt-2">{stakes.map((stake) => <div className="col-md-4" key={`${opportunity.id}-${stake.outcome}`}><div className="stake-card"><span>{stake.outcome}</span><strong>{stake.odds}</strong><small>{stake.bookmaker} · stake {stake.stake}</small></div></div>)}</div></article>;
 }
 
 function formatMatchTime(value) {

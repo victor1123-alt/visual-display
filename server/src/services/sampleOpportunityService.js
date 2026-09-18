@@ -9,6 +9,14 @@ const fixtures = [
     awayTeam: 'Chelsea',
     startsAt: '2026-09-22T16:30:00.000Z',
     market: 'Match Winner',
+    bookmakerSelection: {
+      mode: 'fallback',
+      availableCount: 2,
+      selectedCount: 2,
+      preferredAvailableCount: 0,
+      preferredAvailable: [],
+      preferredMinimum: 2
+    },
     outcomes: [
       { name: 'Arsenal', bookmaker: 'Bookmaker Alpha', odds: 2.25 },
       { name: 'Draw', bookmaker: 'Bookmaker Beta', odds: 3.6 },

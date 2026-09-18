@@ -8,12 +8,21 @@ let latestSnapshot = createSnapshot();
 let refreshTimer;
 let refreshInFlight;
 
+function bookmakerPolicy() {
+  return {
+    strategy: 'preferred-first-with-fallback',
+    preferred: env.oddsApi.preferredBookmakers,
+    preferredMinimum: env.oddsApi.preferredMinimum,
+    fallback: 'all-bookmakers-returned-by-provider'
+  };
+}
+
 function createSnapshot() {
   return {
     type: 'market.snapshot',
     capturedAt: new Date().toISOString(),
     opportunities: [],
-    oddsApi: { provider: 'the-odds-api', status: 'not-configured' },
+    oddsApi: { provider: 'the-odds-api', status: 'not-configured', bookmakerPolicy: bookmakerPolicy() },
     persistence: { persisted: false, reason: 'not-refreshed' }
   };
 }
@@ -40,7 +49,8 @@ export async function refreshSnapshot(webSocketServer) {
         oddsApi: {
           provider: 'the-odds-api',
           status: 'demo',
-          message: 'Add ODDS_API_KEY to server/.env to receive live market data.'
+          message: 'Add ODDS_API_KEY to server/.env to receive live market data.',
+          bookmakerPolicy: bookmakerPolicy()
         },
         persistence: { persisted: false, reason: env.dbEnabled ? 'provider-not-configured' : 'database-disabled' }
       };
@@ -74,7 +84,8 @@ export async function refreshSnapshot(webSocketServer) {
           provider: 'the-odds-api',
           status: 'error',
           error: error.message,
-          capturedAt: new Date().toISOString()
+          capturedAt: new Date().toISOString(),
+          bookmakerPolicy: bookmakerPolicy()
         }
       };
     }

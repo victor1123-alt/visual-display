@@ -21,6 +21,8 @@ export function calculateArbitrage(outcomes, totalStake = 100) {
     stakes: validOutcomes.map((outcome) => ({
       outcome: outcome.name,
       bookmaker: outcome.bookmaker,
+      bookmakerKey: outcome.bookmakerKey,
+      preferred: Boolean(outcome.preferred),
       odds: Number(Number(outcome.odds).toFixed(3)),
       stake: Number(((Number(totalStake) / Number(outcome.odds)) / impliedProbability).toFixed(2)),
       return: Number((Number(totalStake) / impliedProbability).toFixed(2))

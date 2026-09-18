@@ -27,6 +27,13 @@ refresh normalizes match-winner prices, calculates arbitrage, and persists
 events, markets, bookmakers, and historical odds through Sequelize when the
 database is enabled.
 
+Bookmakers are selected with a Nigeria-first policy. If at least
+`ODDS_API_PREFERRED_MIN_COUNT` preferred bookmakers are present on an event,
+only those bookmakers are used for its arbitrage calculation. Otherwise the
+server falls back to every bookmaker returned by the provider for that event.
+Configure the priority list with `ODDS_API_PREFERRED_BOOKMAKERS`, using a
+comma-separated list of bookmaker keys or names.
+
 The frontend runs at `http://localhost:5173` and the API at
 `http://localhost:5000`.
 
@@ -38,6 +45,7 @@ automatic synchronization as the schema matures.
 
 - `GET /api/health` — service health check.
 - `GET /api/opportunities?minMargin=1&limit=20` — ranked arbitrage opportunities.
+- `GET /api/opportunities?bookmakerMode=preferred` — opportunities calculated only from enough Nigeria-priority bookmakers; use `fallback` to inspect global fallback results.
 - `GET /api/opportunities/:id` — one opportunity by event id.
 - `GET /api/markets` — latest normalized snapshot and provider status.
 - `POST /api/markets/sync` — trigger an immediate market refresh.
@@ -53,6 +61,9 @@ Railway can use the included `railway.json` configuration directly.
 Set `ODDS_API_KEY` for live data. If you attach Railway MySQL, set
 `DB_ENABLED=true`; the server understands Railway's `MYSQLHOST`, `MYSQLPORT`,
 `MYSQLDATABASE`, `MYSQLUSER`, and `MYSQLPASSWORD` variables automatically.
+Set `ODDS_API_PREFERRED_BOOKMAKERS` to the preferred comma-separated list and
+`ODDS_API_PREFERRED_MIN_COUNT=2` to require two preferred bookmakers before
+excluding the global fallback books.
 Set `DB_SYNC=true` only for the first schema creation, then turn it off.
 `DB_REQUIRED=false` keeps the web service available in in-memory mode if the
 database is temporarily unavailable.

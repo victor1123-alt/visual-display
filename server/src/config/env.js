@@ -13,6 +13,13 @@ function toPositiveNumber(value, fallback) {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+function toList(value, fallback = '') {
+  return String(value || fallback)
+    .split(',')
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean);
+}
+
 export const env = {
   port: toPositiveNumber(process.env.PORT, 5000),
   nodeEnv: process.env.NODE_ENV || 'development',
@@ -25,7 +32,12 @@ export const env = {
     key: process.env.ODDS_API_KEY || '',
     sport: process.env.ODDS_API_SPORT || 'soccer_epl',
     regions: process.env.ODDS_API_REGIONS || 'uk,eu',
-    markets: process.env.ODDS_API_MARKETS || 'h2h'
+    markets: process.env.ODDS_API_MARKETS || 'h2h',
+    preferredBookmakers: toList(
+      process.env.ODDS_API_PREFERRED_BOOKMAKERS,
+      'betninja,betking,sportybet,bet9ja,nairabet,merrybet,onexbet,1xbet'
+    ),
+    preferredMinimum: toPositiveNumber(process.env.ODDS_API_PREFERRED_MIN_COUNT, 2)
   },
   database: {
     host: process.env.DB_HOST || process.env.MYSQLHOST || '127.0.0.1',
