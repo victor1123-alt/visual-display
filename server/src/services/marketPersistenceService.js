@@ -97,7 +97,7 @@ export async function persistOddsSnapshot(snapshot) {
               outcome: outcome.name,
               value: outcome.price,
               capturedAt: validDate(snapshot.capturedAt) || new Date(),
-              sourceUrl: 'https://the-odds-api.com/'
+              sourceUrl: 'https://oddspapi.io/'
             }, { transaction });
             oddCount += 1;
           }

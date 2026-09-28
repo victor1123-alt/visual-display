@@ -7,7 +7,7 @@ export function getHealth(_request, response) {
     version: '1.0.0',
     timestamp: new Date().toISOString(),
     storage: env.dbEnabled ? 'mysql' : 'in-memory',
-    provider: 'the-odds-api',
+    provider: 'oddspapi',
     syncIntervalMs: env.syncIntervalMs
   });
 }

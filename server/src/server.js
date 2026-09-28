@@ -4,6 +4,9 @@ import { createMarketWebSocketServer, startMarketSync } from './services/marketS
 import { createServer } from 'node:http';
 
 async function startServer() {
+  if (env.dbEnabled && !env.auth.jwtSecret) {
+    throw new Error('JWT_SECRET must be configured when DB_ENABLED=true');
+  }
   if (env.dbEnabled) {
     let databaseConnection;
     try {

@@ -7,9 +7,13 @@ export async function connectDatabase() {
 }
 
 export async function initializeDatabase() {
-  if (!env.dbSync) return;
-  await sequelize.sync();
-  console.log('Database tables synchronized');
+  await sequelize.models.User.sync();
+  await sequelize.models.Subscription.sync();
+  console.log('Authentication tables ready');
+  if (env.dbSync) {
+    await sequelize.sync();
+    console.log('All database tables synchronized');
+  }
 }
 
 export async function closeDatabase() {

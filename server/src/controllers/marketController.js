@@ -7,7 +7,7 @@ export function getMarketSnapshot(_request, response) {
     meta: {
       totalOpportunities: snapshot.opportunities.length,
       capturedAt: snapshot.capturedAt,
-      providerStatus: snapshot.oddsApi,
+      providerStatus: snapshot.providerStatus,
       persistence: snapshot.persistence
     }
   });
@@ -21,7 +21,7 @@ export async function syncMarkets(_request, response, next) {
       meta: {
         totalOpportunities: snapshot.opportunities.length,
         capturedAt: snapshot.capturedAt,
-        providerStatus: snapshot.oddsApi,
+        providerStatus: snapshot.providerStatus,
         persistence: snapshot.persistence
       }
     });

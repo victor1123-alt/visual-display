@@ -123,6 +123,12 @@ h1 { max-width: 760px; }
 .form-control { padding: .8rem .9rem; border-color: #d0d5dd; border-radius: .65rem; }
 .form-control:focus { border-color: #818cf8; box-shadow: 0 0 0 .25rem rgba(99,102,241,.14); }
 .text-button { padding: 0; border: 0; background: transparent; color: var(--primary); }
+.subscription-card { width: min(100%, 520px); }
+.subscription-status { display: flex; justify-content: space-between; gap: 1rem; padding: .85rem 0; border-bottom: 1px solid var(--line); color: #667085; }
+.subscription-status strong { color: var(--ink); text-transform: capitalize; }
+.subscription-state.active { color: #047857; }
+.subscription-state.pending { color: #b45309; }
+.subscription-state.canceled, .subscription-state.expired { color: #b42318; }
 .dashboard-page { min-height: calc(100vh - 72px); }
 .status-pill { display: inline-flex; align-items: center; gap: .5rem; color: #475467; font-size: .82rem; font-weight: 700; }
 .status-dot { width: .55rem; height: .55rem; border-radius: 50%; background: #f59e0b; }

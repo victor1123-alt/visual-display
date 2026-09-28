@@ -1,5 +1,6 @@
 import cors from 'cors';
 import express from 'express';
+import helmet from 'helmet';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,13 +9,17 @@ import healthRoutes from './routes/healthRoutes.js';
 import opportunityRoutes from './routes/opportunityRoutes.js';
 import marketRoutes from './routes/marketRoutes.js';
 import catalogRoutes from './routes/catalogRoutes.js';
+import authRoutes from './routes/authRoutes.js';
+import subscriptionRoutes from './routes/subscriptionRoutes.js';
 
 const app = express();
 const clientDistPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../client/dist');
 const hasClientBuild = existsSync(path.join(clientDistPath, 'index.html'));
 
-app.use(cors({ origin: env.clientUrl }));
-app.use(express.json());
+app.set('trust proxy', 1);
+app.use(helmet());
+app.use(cors({ origin: env.clientUrl, credentials: true }));
+app.use(express.json({ limit: '32kb' }));
 
 if (hasClientBuild) {
   app.use(express.static(clientDistPath));
@@ -25,6 +30,8 @@ app.get('/', (_request, response) => {
 });
 
 app.use('/api/health', healthRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/opportunities', opportunityRoutes);
 app.use('/api/markets', marketRoutes);
 app.use('/api/catalog', catalogRoutes);

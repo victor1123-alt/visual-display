@@ -1,8 +1,9 @@
 import { WebSocketServer } from 'ws';
 import { env } from '../config/env.js';
-import { fetchOddsApiSnapshot } from './oddsApiService.js';
+import { fetchOddsPapiSnapshot } from './oddsPapiService.js';
 import { getSampleOpportunities } from './sampleOpportunityService.js';
 import { persistOddsSnapshot } from './marketPersistenceService.js';
+import { accessTokenFromRequest, authenticateSubscribedToken } from '../middleware/authMiddleware.js';
 
 let latestSnapshot = createSnapshot();
 let refreshTimer;
@@ -11,9 +12,9 @@ let refreshInFlight;
 function bookmakerPolicy() {
   return {
     strategy: 'preferred-first-with-fallback',
-    preferred: env.oddsApi.preferredBookmakers,
-    preferredMinimum: env.oddsApi.preferredMinimum,
-    fallback: 'all-bookmakers-returned-by-provider'
+    preferred: env.oddsPapi.preferredBookmakers,
+    preferredMinimum: env.oddsPapi.preferredMinimum,
+    fallback: env.oddsPapi.fallbackBookmakers
   };
 }
 
@@ -22,7 +23,7 @@ function createSnapshot() {
     type: 'market.snapshot',
     capturedAt: new Date().toISOString(),
     opportunities: [],
-    oddsApi: { provider: 'the-odds-api', status: 'not-configured', bookmakerPolicy: bookmakerPolicy() },
+    providerStatus: { provider: 'oddspapi', status: 'not-configured', bookmakerPolicy: bookmakerPolicy() },
     persistence: { persisted: false, reason: 'not-refreshed' }
   };
 }
@@ -42,14 +43,14 @@ export async function refreshSnapshot(webSocketServer) {
   if (refreshInFlight) return refreshInFlight;
 
   refreshInFlight = (async () => {
-    if (!env.oddsApi.key) {
+    if (!env.oddsPapi.key) {
       latestSnapshot = {
         ...createSnapshot(),
         opportunities: getSampleOpportunities(),
-        oddsApi: {
-          provider: 'the-odds-api',
+        providerStatus: {
+          provider: 'oddspapi',
           status: 'demo',
-          message: 'Add ODDS_API_KEY to server/.env to receive live market data.',
+          message: 'Add ODDSPAPI_API_KEY to server/.env to receive live market data.',
           bookmakerPolicy: bookmakerPolicy()
         },
         persistence: { persisted: false, reason: env.dbEnabled ? 'provider-not-configured' : 'database-disabled' }
@@ -59,7 +60,7 @@ export async function refreshSnapshot(webSocketServer) {
     }
 
     try {
-      const oddsSnapshot = await fetchOddsApiSnapshot();
+      const oddsSnapshot = await fetchOddsPapiSnapshot();
       let persistence = { persisted: false, reason: 'database-disabled' };
 
       if (env.dbEnabled) {
@@ -74,14 +75,14 @@ export async function refreshSnapshot(webSocketServer) {
         type: 'market.snapshot',
         capturedAt: oddsSnapshot.capturedAt,
         opportunities: oddsSnapshot.opportunities,
-        oddsApi: { ...oddsSnapshot, status: 'connected' },
+        providerStatus: { ...oddsSnapshot, status: 'connected' },
         persistence
       };
     } catch (error) {
       latestSnapshot = {
         ...createSnapshot(),
-        oddsApi: {
-          provider: 'the-odds-api',
+        providerStatus: {
+          provider: 'oddspapi',
           status: 'error',
           error: error.message,
           capturedAt: new Date().toISOString(),
@@ -112,7 +113,20 @@ export function startMarketSync(webSocketServer, intervalMs = env.syncIntervalMs
 }
 
 export function createMarketWebSocketServer(httpServer) {
-  const webSocketServer = new WebSocketServer({ server: httpServer, path: '/ws/markets' });
+  const webSocketServer = new WebSocketServer({
+    server: httpServer,
+    path: '/ws/markets',
+    verifyClient(info, done) {
+      const token = accessTokenFromRequest(info.req);
+      authenticateSubscribedToken(token)
+        .then((user) => {
+          if (!user) return done(false, 401, 'Active subscription required');
+          info.req.user = user;
+          return done(true);
+        })
+        .catch(() => done(false, 401, 'Active subscription required'));
+    }
+  });
   webSocketServer.on('connection', (socket) => {
     socket.send(JSON.stringify(latestSnapshot));
   });

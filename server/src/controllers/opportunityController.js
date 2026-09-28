@@ -23,9 +23,9 @@ export function listOpportunities(request, response) {
     meta: {
       total: opportunities.length,
       capturedAt: snapshot.capturedAt,
-      source: snapshot.oddsApi?.provider || 'the-odds-api',
-      providerStatus: snapshot.oddsApi,
-      bookmakerPolicy: snapshot.oddsApi?.bookmakerPolicy,
+      source: snapshot.providerStatus?.provider || 'oddspapi',
+      providerStatus: snapshot.providerStatus,
+      bookmakerPolicy: snapshot.providerStatus?.bookmakerPolicy,
       persistence: snapshot.persistence
     }
   });
