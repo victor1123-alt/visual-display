@@ -6,6 +6,26 @@ export function getSubscription(request, response) {
   return response.json({ data: serializeSubscription(request.user.subscription) });
 }
 
+export async function listSubscriptions(_request, response, next) {
+  try {
+    const users = await User.findAll({
+      attributes: ['id', 'name', 'email', 'createdAt'],
+      include: [{ model: Subscription, as: 'subscription' }],
+      order: [['createdAt', 'DESC']],
+      limit: 100
+    });
+    return response.json({ data: users.map((user) => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      createdAt: user.createdAt,
+      subscription: serializeSubscription(user.subscription)
+    })) });
+  } catch (error) {
+    return next(error);
+  }
+}
+
 export async function requestSubscription(request, response, next) {
   try {
     const [subscription] = await Subscription.findOrCreate({

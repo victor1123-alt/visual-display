@@ -14,6 +14,8 @@ async function startServer() {
       await import('./models/index.js');
       await databaseConnection.connectDatabase();
       await databaseConnection.initializeDatabase();
+      console.log("database configured successfully");
+      
     } catch (error) {
       if (env.dbRequired) throw error;
       console.error(`Database unavailable; continuing with in-memory snapshots: ${error.message}`);

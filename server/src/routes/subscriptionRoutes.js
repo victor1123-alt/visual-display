@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { rateLimit } from 'express-rate-limit';
-import { activateSubscription, cancelSubscription, getSubscription, requestSubscription } from '../controllers/subscriptionController.js';
+import { activateSubscription, cancelSubscription, getSubscription, listSubscriptions, requestSubscription } from '../controllers/subscriptionController.js';
 import { authenticate, requireAdminApiKey } from '../middleware/authMiddleware.js';
 
 const router = Router();
@@ -14,6 +14,7 @@ const adminLimiter = rateLimit({
 
 router.post('/admin/activate', adminLimiter, requireAdminApiKey, activateSubscription);
 router.post('/admin/cancel', adminLimiter, requireAdminApiKey, cancelSubscription);
+router.get('/admin/subscriptions', requireAdminApiKey, listSubscriptions);
 router.get('/', authenticate, getSubscription);
 router.post('/request', authenticate, requestSubscription);
 
