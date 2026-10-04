@@ -96,7 +96,6 @@ function Navbar({ page, session, navigate, logout }) {
         <div className="navbar-nav ms-auto align-items-lg-center gap-lg-2">
           <button className={`nav-link ${page === 'home' ? 'active' : ''}`} onClick={() => navigate('home')}>Overview</button>
           <button className={`nav-link ${page === 'about' ? 'active' : ''}`} onClick={() => navigate('about')}>How it works</button>
-          <button className={`nav-link ${page === 'admin' ? 'active' : ''}`} onClick={() => navigate('admin')}>Admin</button>
           {session
             ? <><button className={`nav-link ${page === 'dashboard' || page === 'subscription' ? 'active' : ''}`} onClick={() => navigate(session.subscription?.active ? 'dashboard' : 'subscription')}>{session.subscription?.active ? 'Dashboard' : 'Subscription'}</button><button className="btn btn-light btn-sm px-3 ms-lg-2" onClick={logout}>Log out</button></>
             : <button className="btn btn-primary btn-sm px-3 ms-lg-2" onClick={() => navigate('login')}>Log in</button>}
