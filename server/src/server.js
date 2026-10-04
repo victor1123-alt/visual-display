@@ -18,7 +18,7 @@ async function startServer() {
       
     } catch (error) {
       if (env.dbRequired) throw error;
-      console.error(`Database unavailable; continuing with in-memory snapshots: ${error.message}`);
+      console.error(`Database unavailable; continuing with in-memory snapshots: ${error}`);
       env.dbEnabled = false;
       await databaseConnection?.closeDatabase().catch(() => {});
     }
