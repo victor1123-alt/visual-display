@@ -51,8 +51,10 @@ automatic synchronization as the schema matures.
 - `POST /api/auth/register` — create a database-backed account and pending subscription.
 - `POST /api/auth/login` and `POST /api/auth/logout` — create or clear the secure HTTP-only session.
 - `GET /api/auth/me` — return the authenticated account and subscription state.
-- `GET /api/subscriptions` and `POST /api/subscriptions/request` — inspect or request a subscription for the authenticated account.
-- `POST /api/subscriptions/admin/activate` — activate a valid account using the private `x-admin-key` header.
+- `GET /api/subscriptions` — inspect the authenticated account's current subscription.
+- `GET /api/subscriptions/price` — public monthly NGN price configuration.
+- `POST /api/subscriptions/checkout` and `POST /api/subscriptions/verify` — initialize and verify Paystack checkout for the signed-in account.
+- `POST /api/subscriptions/paystack/webhook` — verify signed Paystack success events and activate paid access.
 - `GET /api/opportunities?minMargin=1&limit=20` — ranked arbitrage opportunities.
 - `GET /api/opportunities?bookmakerMode=preferred` — opportunities calculated only from enough Nigeria-priority bookmakers; use `fallback` to inspect global fallback results.
 - `GET /api/opportunities/:id` — one opportunity by event id.
@@ -66,15 +68,9 @@ authenticated account and a currently active subscription. The health and
 authentication routes remain public. Browser sessions use a signed JWT in an
 HTTP-only, secure cookie.
 
-Subscriptions begin in `pending` state. Until a payment provider is connected,
-activate a verified account manually with:
-
-```bash
-curl -X POST https://YOUR_DOMAIN/api/subscriptions/admin/activate \
-  -H "Content-Type: application/json" \
-  -H "x-admin-key: YOUR_ADMIN_API_KEY" \
-  -d '{"email":"member@example.com","durationDays":30,"reference":"payment-reference"}'
-```
+New subscriptions begin in `pending` state. Members start a one-month payment
+from the subscription page. The server verifies Paystack transactions before
+granting access; subscription access expires at the end of its calendar month.
 
 ## Railway deployment
 
@@ -101,3 +97,17 @@ default because OddsPapi enforces endpoint cooldowns.
 Set `DB_SYNC=true` only for the first schema creation, then turn it off.
 `DB_REQUIRED=false` keeps the web service available in in-memory mode if the
 database is temporarily unavailable.
+
+For paid subscriptions, set `PAYSTACK_SECRET_KEY` to your Paystack secret key
+and `PAYSTACK_PRICE_NGN` to the monthly price in Naira. Set
+`PAYSTACK_CALLBACK_URL` to `https://YOUR_DOMAIN/subscription`, then configure
+the Paystack dashboard webhook URL as
+`https://YOUR_DOMAIN/api/subscriptions/paystack/webhook`. Store secret keys
+in Railway Variables; do not add them to source files or `VITE_` variables.
+To email members after a successful payment, create a Resend API key and set
+`RESEND_API_KEY` and `EMAIL_FROM` in Railway Variables. `EMAIL_FROM` must be a
+sender address verified in your Resend account (for example,
+`VisualDisplay <payments@yourdomain.com>`). The app sends the confirmation
+after it activates the subscription, whether confirmation arrives through the
+Paystack return flow or webhook. If mail is not configured or delivery fails,
+the payment and subscription still succeed; the server logs the email issue.

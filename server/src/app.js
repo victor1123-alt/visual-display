@@ -19,7 +19,7 @@ const hasClientBuild = existsSync(path.join(clientDistPath, 'index.html'));
 app.set('trust proxy', 1);
 app.use(helmet());
 app.use(cors({ origin: env.clientUrl, credentials: true }));
-app.use(express.json({ limit: '32kb' }));
+app.use(express.json({ limit: '32kb', verify: (request, _response, buffer) => { request.rawBody = Buffer.from(buffer); } }));
 
 if (hasClientBuild) {
   app.use(express.static(clientDistPath));

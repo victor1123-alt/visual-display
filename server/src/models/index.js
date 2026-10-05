@@ -6,6 +6,7 @@ import { Market, initMarket } from './Market.js';
 import { Odd, initOdd } from './Odd.js';
 import { User, initUser } from './User.js';
 import { Subscription, initSubscription } from './Subscription.js';
+import { Payment, initPayment } from './Payment.js';
 
 initBookmaker(sequelize);
 initSport(sequelize);
@@ -14,6 +15,7 @@ initMarket(sequelize);
 initOdd(sequelize);
 initUser(sequelize);
 initSubscription(sequelize);
+initPayment(sequelize);
 
 Sport.hasMany(Event, { foreignKey: 'sportId' });
 Event.belongsTo(Sport, { foreignKey: 'sportId' });
@@ -25,5 +27,7 @@ Bookmaker.hasMany(Odd, { foreignKey: 'bookmakerId' });
 Odd.belongsTo(Bookmaker, { foreignKey: 'bookmakerId' });
 User.hasOne(Subscription, { foreignKey: 'userId', as: 'subscription', onDelete: 'CASCADE' });
 Subscription.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+User.hasMany(Payment, { foreignKey: 'userId', as: 'payments', onDelete: 'CASCADE' });
+Payment.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
-export { sequelize, Bookmaker, Sport, Event, Market, Odd, User, Subscription };
+export { sequelize, Bookmaker, Sport, Event, Market, Odd, User, Subscription, Payment };

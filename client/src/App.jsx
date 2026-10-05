@@ -179,17 +179,43 @@ function AuthPage({ mode, authenticate, navigate, gated }) {
 function SubscriptionPage({ session, refreshSession, navigate, gated }) {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [price, setPrice] = useState(null);
+  const [paymentReference, setPaymentReference] = useState('');
   const subscription = session.subscription;
 
-  async function requestAccess() {
+  useEffect(() => {
+    fetch(`${apiUrl}/subscriptions/price`)
+      .then((response) => response.json())
+      .then((payload) => setPrice(payload.data))
+      .catch(() => setPrice({ configured: false }));
+
+    const query = new URLSearchParams(window.location.search);
+    const reference = query.get('reference') || query.get('trxref');
+    if (reference) {
+      setPaymentReference(reference);
+      verifyPayment(reference);
+    }
+  }, []);
+
+  async function verifyPayment(reference = paymentReference) {
+    if (!reference) return;
     setLoading(true);
-    setMessage('');
+    setMessage('Checking payment with Paystack…');
     try {
-      const response = await fetch(`${apiUrl}/subscriptions/request`, { method: 'POST', credentials: 'include' });
+      const response = await fetch(`${apiUrl}/subscriptions/verify`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reference })
+      });
       const payload = await response.json();
-      if (!response.ok) throw new Error(payload.message || 'Unable to request a subscription.');
-      setMessage(payload.message);
-      await refreshSession();
+      if (!response.ok && response.status !== 202) throw new Error(payload.message || 'Payment verification failed.');
+      setMessage(payload.message || 'Payment status updated.');
+      if (payload.data?.paymentStatus === 'success') {
+        setPaymentReference('');
+        window.history.replaceState({}, '', window.location.pathname);
+        await refreshSession();
+      }
     } catch (error) {
       setMessage(error.message);
     } finally {
@@ -197,15 +223,28 @@ function SubscriptionPage({ session, refreshSession, navigate, gated }) {
     }
   }
 
-  async function checkStatus() {
+  async function startCheckout() {
     setLoading(true);
-    const refreshed = await refreshSession();
-    setLoading(false);
-    if (refreshed?.subscription?.active) navigate('dashboard');
-    else setMessage('Your subscription is still awaiting activation.');
+    setMessage('');
+    try {
+      const response = await fetch(`${apiUrl}/subscriptions/checkout`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.message || 'Unable to start payment.');
+      window.location.assign(payload.data.authorizationUrl);
+    } catch (error) {
+      setMessage(error.message);
+      setLoading(false);
+    }
   }
 
-  return <main className="app-shell auth-shell"><div className="auth-card subscription-card"><div className="auth-icon">V</div><div className="eyebrow mb-2">Subscription access</div><h1 className="h2 fw-bold mb-2">Hello, {session.user.name}.</h1><p className="text-secondary mb-4">Your account is valid. Market data unlocks after your subscription is activated.</p>{gated && <div className="alert alert-warning small">The dashboard is restricted to active subscribers.</div>}{message && <div className="alert alert-info small">{message}</div>}<div className="subscription-status"><span>Status</span><strong className={`subscription-state ${subscription?.status || 'pending'}`}>{subscription?.status || 'pending'}</strong></div><div className="subscription-status"><span>Plan</span><strong>{subscription?.plan || 'pro-monthly'}</strong></div>{subscription?.endsAt && <div className="subscription-status"><span>Access until</span><strong>{new Date(subscription.endsAt).toLocaleDateString('en-NG')}</strong></div>}<button className="btn btn-primary w-100 mt-4" onClick={subscription?.active ? () => navigate('dashboard') : requestAccess} disabled={loading}>{subscription?.active ? 'Open dashboard' : loading ? 'Please wait…' : 'Request subscription'}</button>{!subscription?.active && <button className="btn btn-outline-secondary w-100 mt-2" onClick={checkStatus} disabled={loading}>Refresh subscription status</button>}<p className="small text-secondary text-center mt-3 mb-0">Subscription activation is completed by the site administrator after account and payment verification.</p></div></main>;
+  const priceLabel = price?.configured
+    ? new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(price.amount)
+    : 'Price not configured';
+
+  return <main className="app-shell auth-shell"><div className="auth-card subscription-card"><div className="auth-icon">V</div><div className="eyebrow mb-2">Subscription access</div><h1 className="h2 fw-bold mb-2">Hello, {session.user.name}.</h1><p className="text-secondary mb-4">Pay once to activate one month of VisualDisplay Pro access. Access expires automatically at the end of the month.</p>{gated && <div className="alert alert-warning small">The dashboard is restricted to active subscribers.</div>}{message && <div className="alert alert-info small" role="status">{message}</div>}<div className="subscription-status"><span>Status</span><strong className={`subscription-state ${subscription?.status || 'pending'}`}>{subscription?.status || 'pending'}</strong></div><div className="subscription-status"><span>Plan</span><strong>{subscription?.plan || 'pro-monthly'}</strong></div><div className="subscription-status"><span>Monthly price</span><strong>{priceLabel}</strong></div>{subscription?.endsAt && <div className="subscription-status"><span>Access until</span><strong>{new Date(subscription.endsAt).toLocaleDateString('en-NG')}</strong></div>}{subscription?.active ? <button className="btn btn-primary w-100 mt-4" onClick={() => navigate('dashboard')}>Open dashboard</button> : <button className="btn btn-primary w-100 mt-4" onClick={startCheckout} disabled={loading || !price?.configured}>{loading ? 'Please wait…' : 'Continue to Paystack'}</button>}{paymentReference && <button className="btn btn-outline-secondary w-100 mt-2" onClick={() => verifyPayment()} disabled={loading}>{loading ? 'Checking…' : 'Check payment status'}</button>}<p className="small text-secondary text-center mt-3 mb-0">Payments are securely processed by Paystack. Your subscription does not renew automatically.</p></div></main>;
 }
 
 function DashboardPage({ apiStatus, session, navigate }) {
@@ -248,7 +287,17 @@ function DashboardPage({ apiStatus, session, navigate }) {
 }
 
 function PricingSection({ navigate }) {
-  return <section className="pricing-section"><div className="container py-5"><div className="row align-items-end g-4 mb-4"><div className="col-lg-7"><div className="eyebrow">Simple membership</div><h2 className="h1 mb-0">Choose a sharper view.</h2></div><div className="col-lg-5"><p className="text-secondary mb-0">One focused workspace for comparing odds, measuring the edge and following market signals.</p></div></div><div className="row g-4 align-items-stretch"><div className="col-lg-7"><div className="pricing-card p-4 p-md-5 h-100"><div className="d-flex justify-content-between align-items-start"><div><span className="pricing-label">VisualDisplay Pro</span><h3 className="h2 mt-3">Market intelligence, without the clutter.</h3></div><span className="price-tag">Pro</span></div><div className="price my-4">$19 <small>/ month</small></div><div className="row g-3"><div className="col-sm-6"><div className="plan-feature"><span>✓</span> Live opportunity dashboard</div></div><div className="col-sm-6"><div className="plan-feature"><span>✓</span> Suggested stake calculations</div></div><div className="col-sm-6"><div className="plan-feature"><span>✓</span> Market history and stats</div></div><div className="col-sm-6"><div className="plan-feature"><span>✓</span> Clear provider timestamps</div></div></div><button className="btn btn-primary mt-4" onClick={() => navigate('register')}>Create account and subscribe <span aria-hidden="true">→</span></button><p className="small text-secondary mt-3 mb-0">A valid account is required before subscription activation.</p></div></div><div className="col-lg-5"><div className="pricing-note h-100"><div className="eyebrow">The fine print</div><h3 className="h4">Information, not promises.</h3><p className="text-secondary">VisualDisplay highlights mathematical opportunities based on available prices. Markets move, providers differ and execution has real-world constraints.</p><p className="text-secondary mb-0">Use the dashboard as decision support, and always apply your own risk controls.</p></div></div></div></div></section>;
+  const [price, setPrice] = useState(null);
+  useEffect(() => {
+    fetch(`${apiUrl}/subscriptions/price`)
+      .then((response) => response.json())
+      .then((payload) => setPrice(payload.data))
+      .catch(() => setPrice({ configured: false }));
+  }, []);
+  const priceLabel = price?.configured
+    ? new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(price.amount)
+    : 'Price being configured';
+  return <section className="pricing-section"><div className="container py-5"><div className="row align-items-end g-4 mb-4"><div className="col-lg-7"><div className="eyebrow">Simple membership</div><h2 className="h1 mb-0">Choose a sharper view.</h2></div><div className="col-lg-5"><p className="text-secondary mb-0">One focused workspace for comparing odds, measuring the edge and following market signals.</p></div></div><div className="row g-4 align-items-stretch"><div className="col-lg-7"><div className="pricing-card p-4 p-md-5 h-100"><div className="d-flex justify-content-between align-items-start"><div><span className="pricing-label">VisualDisplay Pro</span><h3 className="h2 mt-3">Market intelligence, without the clutter.</h3></div><span className="price-tag">Pro</span></div><div className="price my-4">{priceLabel} <small>/ month</small></div><div className="row g-3"><div className="col-sm-6"><div className="plan-feature"><span>✓</span> Live opportunity dashboard</div></div><div className="col-sm-6"><div className="plan-feature"><span>✓</span> Suggested stake calculations</div></div><div className="col-sm-6"><div className="plan-feature"><span>✓</span> Market history and stats</div></div><div className="col-sm-6"><div className="plan-feature"><span>✓</span> Clear provider timestamps</div></div></div><button className="btn btn-primary mt-4" onClick={() => navigate('register')}>Create account and subscribe <span aria-hidden="true">→</span></button><p className="small text-secondary mt-3 mb-0">A valid account is required before subscription activation.</p></div></div><div className="col-lg-5"><div className="pricing-note h-100"><div className="eyebrow">The fine print</div><h3 className="h4">Information, not promises.</h3><p className="text-secondary">VisualDisplay highlights mathematical opportunities based on available prices. Markets move, providers differ and execution has real-world constraints.</p><p className="text-secondary mb-0">Use the dashboard as decision support, and always apply your own risk controls.</p></div></div></div></div></section>;
 }
 
 function FaqSection() {

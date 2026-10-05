@@ -34,6 +34,15 @@ export const env = {
   dbRequired: toBoolean(process.env.DB_REQUIRED, false),
   dbSync: toBoolean(process.env.DB_SYNC, false),
   syncIntervalMs: toPositiveNumber(process.env.SYNC_INTERVAL_MS, 60000),
+  paystack: {
+    secretKey: process.env.PAYSTACK_SECRET_KEY || '',
+    priceNgn: toPositiveNumber(process.env.PAYSTACK_PRICE_NGN, 0),
+    callbackUrl: process.env.PAYSTACK_CALLBACK_URL || ''
+  },
+  email: {
+    resendApiKey: process.env.RESEND_API_KEY || '',
+    from: process.env.EMAIL_FROM || ''
+  },
   auth: {
     jwtSecret: process.env.JWT_SECRET || '',
     jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',

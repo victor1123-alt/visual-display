@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { rateLimit } from 'express-rate-limit';
-import { activateSubscription, cancelSubscription, getSubscription, listSubscriptions, requestSubscription } from '../controllers/subscriptionController.js';
+import { cancelSubscription, getSubscription, listSubscriptions } from '../controllers/subscriptionController.js';
+import { createSubscriptionCheckout, getSubscriptionPrice, handlePaystackWebhook, verifySubscriptionPayment } from '../controllers/paymentController.js';
 import { authenticate, requireAdminApiKey } from '../middleware/authMiddleware.js';
 
 const router = Router();
@@ -12,10 +13,12 @@ const adminLimiter = rateLimit({
   message: { message: 'Too many subscription administration attempts. Try again later.' }
 });
 
-router.post('/admin/activate', adminLimiter, requireAdminApiKey, activateSubscription);
 router.post('/admin/cancel', adminLimiter, requireAdminApiKey, cancelSubscription);
 router.get('/admin/subscriptions', requireAdminApiKey, listSubscriptions);
+router.get('/price', getSubscriptionPrice);
+router.post('/checkout', authenticate, createSubscriptionCheckout);
+router.post('/verify', authenticate, verifySubscriptionPayment);
+router.post('/paystack/webhook', handlePaystackWebhook);
 router.get('/', authenticate, getSubscription);
-router.post('/request', authenticate, requestSubscription);
 
 export default router;
