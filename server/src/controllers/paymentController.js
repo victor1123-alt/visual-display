@@ -1,5 +1,4 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import { Op } from 'sequelize';
 import { env } from '../config/env.js';
 import { Payment, sequelize, Subscription, User } from '../models/index.js';
 import {
@@ -119,19 +118,6 @@ export async function createSubscriptionCheckout(request, response) {
   }
 
   try {
-    const recentPending = await Payment.findOne({
-      where: {
-        userId: request.user.id,
-        status: 'pending',
-        checkoutUrl: { [Op.ne]: null },
-        createdAt: { [Op.gte]: new Date(Date.now() - 30 * 60 * 1000) }
-      },
-      order: [['createdAt', 'DESC']]
-    });
-    if (recentPending) {
-      return response.json({ data: { authorizationUrl: recentPending.checkoutUrl, reference: recentPending.reference } });
-    }
-
     const reference = newPaymentReference(request.user.id);
     const payment = await Payment.create({
       userId: request.user.id,
